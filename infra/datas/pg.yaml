@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: pg-pvc
+  name: pg-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pg
+  name: pg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pg
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pg
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_PASSWORD
+              value: alexander
+            - name: POSTGRES_USER
+              value: postgres
+            - name: TZ
+              value: UTC
+          image: postgres:15
+          name: pg
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d
+              name: my-pg-pvc
+            - mountPath: /varl/lib/postgresql/data
+              name: my-pg-pvc
+      hostname: pg
+      restartPolicy: Always
+      volumes:
+        - name: my-pg-pvc
+          persistentVolumeClaim:
+            claimName: pg-pvc
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pg
+  name: pg
+spec:
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+      nodePort: 30001
+  selector:
+    app: pg
+  type: NodePort

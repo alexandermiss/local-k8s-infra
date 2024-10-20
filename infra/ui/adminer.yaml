@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: adminer
+  name: adminer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adminer
+  template:
+    metadata:
+      labels:
+        app: adminer
+    spec:
+      containers:
+        - env:
+            - name: ADMINER_DEFAULT_SERVER
+              value: pg
+            - name: ADMINER_DESIGN
+              value: hever
+            - name: ADMINER_PLUGINS
+              value: dump-alter
+          image: adminer
+          name: adminer
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      hostname: adminer
+      restartPolicy: Always
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: adminer
+  name: adminer
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8090
+      targetPort: 8080
+      nodePort: 31001
+  selector:
+    app: adminer

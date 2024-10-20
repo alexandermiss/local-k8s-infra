@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rediscommander
+  name: rediscommander
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rediscommander
+  template:
+    metadata:
+      labels:
+        app: rediscommander
+    spec:
+      containers:
+        - env:
+            - name: REDIS_HOSTS
+              value: local:redis:6379
+          image: ghcr.io/joeferner/redis-commander:latest
+          name: rediscommander
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+      hostname: rediscommander
+      restartPolicy: Always
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: rediscommander
+  name: rediscommander
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+      nodePort: 31003
+  selector:
+    app: rediscommander

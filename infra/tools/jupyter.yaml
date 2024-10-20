@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jupyter-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi  # Debe coincidir con la capacidad del PV
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jupyter
+  name: jupyter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter
+  template:
+    metadata:
+      labels:
+        app: jupyter
+    spec:
+      containers:
+        - env:
+            - name: JUPYTER_ENABLE_LAB
+              value: "yes"
+          image: quay.io/jupyter/all-spark-notebook:latest
+          name: jupyter
+          ports:
+            - containerPort: 8888
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /home/jovyan/work
+              name: jupyter-notebooks
+      volumes:
+        - name: jupyter-notebooks
+          persistentVolumeClaim:
+            claimName: jupyter-pvc
+      hostname: jupyter
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888
+      nodePort: 32001
+  selector:
+    app: jupyter

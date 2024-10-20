@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: pgadmin4
+  name: pgadmin4-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pgadmin4
+  name: pgadmin4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin4
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pgadmin4
+    spec:
+      containers:
+        - env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: mail@alexandermiss.com
+            - name: PGADMIN_DEFAULT_PASSWORD
+              value: pg
+          image: dpage/pgadmin4:latest
+          name: pgadmin4
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/pgadmin
+              name: pgadmin4
+      hostname: pgadmin4
+      restartPolicy: Always
+      volumes:
+        - name: pgadmin4
+          persistentVolumeClaim:
+            claimName: pgadmin4-pvc
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pgadmin4
+  name: pgadmin4
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 9080
+      targetPort: 80
+      nodePort: 31002
+  selector:
+    app: pgadmin4

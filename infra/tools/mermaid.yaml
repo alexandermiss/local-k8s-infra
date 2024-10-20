@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mermaid
+  name: mermaid
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mermaid
+  template:
+    metadata:
+      labels:
+        app: mermaid
+    spec:
+      containers:
+        - image: ghcr.io/mermaid-js/mermaid-live-editor:latest
+          name: mermaid
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      hostname: mermaid
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mermaid
+  name: mermaid
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8009
+      targetPort: 8080
+      nodePort: 32002
+  selector:
+    app: mermaid
